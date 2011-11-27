@@ -7,69 +7,80 @@ import com.tcp.tahoe.data.impl.AckPacket;
 import com.tcp.tahoe.data.impl.Segment;
 
 public class Receiver {
-	
-	private long RcvWindow;
-	
-	//ordered collection in ascending order
+
+	private long rcvWindow;
+	private long bufferSpace;
+
+	// ordered collection in ascending order
 	private List<Segment> bufferedSegments;
 	private List<Segment> recievedSegments;
-	
+
 	public Receiver(long RcvWindow) {
-		this.RcvWindow = RcvWindow;
+		this.bufferSpace = this.rcvWindow = RcvWindow;
 		bufferedSegments = new ArrayList<Segment>();
 		recievedSegments = new ArrayList<Segment>();
 	}
 
-	public void recieveSegment(List<Segment> data) {
+	public void recieveSegment(Segment data) {
 		int lastIdSegmentRecieved;
-		
-		//if first time and there are no received Segments set lastIdSegmentRecieved to equal -1
-		if(recievedSegments.isEmpty())
+
+		// if first time and there are no received Segments set
+		// lastIdSegmentRecieved to equal -1
+		if (recievedSegments.isEmpty())
 			lastIdSegmentRecieved = -1;
 		else
-			lastIdSegmentRecieved = recievedSegments.get(recievedSegments.size() - 1).getId();
-		
-		while(true){
-			lastIdSegmentRecieved++;
-			boolean foundSegment = false;
-			
-			for(Segment segment : data){
-				if(segment.getId() == lastIdSegmentRecieved){
-					recievedSegments.add(segment);
-					data.remove(segment);
-					foundSegment = true;
-				}
-			}
-			if(!foundSegment){
-				for(Segment segment : bufferedSegments){
-					if(segment.getId() == lastIdSegmentRecieved){
+			lastIdSegmentRecieved = recievedSegments.get(
+					recievedSegments.size() - 1).getId();
+
+		lastIdSegmentRecieved++;
+		if (data.getId() == lastIdSegmentRecieved) {
+			recievedSegments.add(data);
+
+			// check if there is anything in the buffer than can fill up the
+			// received segments list
+			while (true) {
+				lastIdSegmentRecieved++;
+				boolean addedSegment = false;
+				for (Segment segment : bufferedSegments) {
+					if (segment.getId() == lastIdSegmentRecieved) {
 						recievedSegments.add(segment);
+						
 						bufferedSegments.remove(segment);
-						foundSegment = true;
+						bufferSpace = bufferSpace + segment.getMss();
+						
+						addedSegment = true;
 					}
 				}
+				if (!addedSegment)
+					break;
 			}
-			
-			if(!foundSegment)
-				break;
-		}
-		
-		for(Segment segment : data){
-			// retrieving the MSS of the segment in bytes
-			long segmentMss = segment.getMss();
-			
-			if(RcvWindow >= segmentMss){
-				bufferedSegments.add(segment);
-				RcvWindow = RcvWindow + segmentMss;
-			}
-		}
 
+		} else if (data.getId() < lastIdSegmentRecieved) {
+			// already received segment, so if it is a duplicate then discard
+		} else if (data.getId() > lastIdSegmentRecieved) {
+			// check if there is enough room in the reciever's buffer space
+			// if there is enough room then add the data otherwise discard it
+			if (bufferSpace >= data.getMss()) {
+				// check is there is a duplicate segment in the buffer
+				boolean duplicateBuffered = false;
+				for (Segment segment : bufferedSegments) {
+					if (segment.getId() == data.getId()) {
+						duplicateBuffered = true;
+					}
+				}
+				if (!duplicateBuffered) {
+					bufferedSegments.add(data);
+					bufferSpace = bufferSpace - data.getMss();
+				}
+			}
+		}
 	}
 
 	public AckPacket getAck() {
-		if(recievedSegments.isEmpty())
+		if (recievedSegments.isEmpty())
 			return new AckPacket(0);
 		else
-			return new AckPacket(recievedSegments.get(recievedSegments.size() - 1).getId());
+			return new AckPacket(recievedSegments.get(
+					recievedSegments.size() - 1).getId() + 1);
 	}
 }

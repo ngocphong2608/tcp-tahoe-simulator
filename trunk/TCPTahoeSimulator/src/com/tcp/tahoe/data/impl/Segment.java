@@ -12,5 +12,10 @@ public class Segment extends Packet {
 	public long getMss(){
 		return mss;
 	}
+	
+	@Override
+	public String toString(){
+		return "Seg-" + super.toString();
+	}
 
 }

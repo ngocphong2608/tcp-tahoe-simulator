@@ -1,7 +1,6 @@
 package com.tcp.tahoe;
 
-import java.util.List;
-
+import com.tcp.tahoe.data.impl.AckPacket;
 import com.tcp.tahoe.data.impl.Segment;
 import com.tcp.tahoe.modules.*;
 
@@ -26,73 +25,82 @@ public class Simulate {
 	public static void main(String[] args) {
 		
 		//Initialize Modules
-		Sender sender = new Sender(MSS, RTT, NUMBER_OF_PACKETS);
+		Sender sender = new Sender(MSS, RTT, NUMBER_OF_PACKETS, RCV_WINDOW);
 		Receiver receiver = new Receiver(RCV_WINDOW);
 		Router router = new Router(ROUTER_BUFFER_SIZE);
 		Link senderToRouter = new Link(SENDER_TO_ROUTER_LINK_SPEED);
 		Link routerToReceiver = new Link(ROUTER_TO_RECEIVER_LINK_SPEED);
 		
+		
+		//Starting the Simulation
+		System.out.println("TCP Tahoe Siumlation: ");
 		while(!sender.isDoneSending()){
+			
+			//RTO timeout 
+			if(sender.isRTODone()){
+				sender.sendSegments();				
+			}
+			
 			if(!senderToRouter.isBusy()){
 				if(!senderToRouter.isEmpty()){
+					
+					//Start Printout
+					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("Segment enqueued onto the Router:" + senderToRouter.getData());
+					//End Printout
+					
 					router.enqueue(senderToRouter.getData());
 					senderToRouter.freeLink();
-				}
-				if(sender.hasSomethingtoSend())
-					senderToRouter.addData(sender.sendSegments());
+				}	
+				
+				if(sender.hasSomethingtoSend()) {
+					senderToRouter.freeLink();			
+					Segment segmentToSend = sender.sendNextSegment();
 					
+					//TODO sender sending segments
+					senderToRouter.addData(segmentToSend);	
+					
+					//Start Printout
+					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("Segment added on Link1:" + segmentToSend);
+					//End Printout
+				}
 			}
+			
+			
 			
 			if(!routerToReceiver.isBusy()){
 				if(!routerToReceiver.isEmpty()){
-					receiver.recieveSegment(routerToReceiver.getData());
-					sender.recieveAck(receiver.getAck());
+					Segment recievedSegment = routerToReceiver.getData();
+					receiver.recieveSegment(recievedSegment);
+					
+					AckPacket ackPacket = receiver.getAck();
+					sender.recieveAck(ackPacket);
 					routerToReceiver.freeLink();
+					
+					//Start Printout
+					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("Receiver Recieved :" + recievedSegment);
+					System.out.println("Receiver Sends :" + ackPacket.toString());
+					//End Printout
 				}
-				if(router.hasSegmentsToSend())
-					routerToReceiver.addData(router.dequeue());
+				if(router.hasSegmentsToSend()){
+					Segment segmentToSend = router.dequeue();
+					routerToReceiver.addData(segmentToSend);
+					
+					//Start Printout
+					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("Segment dequeued onto Link2:" + segmentToSend);
+					//End Printout
+				}
 			}
-		
-		//Start Printout
-		System.out.printf("Clock Cycle %10d(ms)\n", clock);
-		
-		// TODO Print out Sender Information
-		
-		//Printing out segments on the first link
-		System.out.print("Segments on 1st Link: {");
-		for(Segment segment : senderToRouter.getData()){
-			System.out.print(segment.getId() + ",");
-		}
-		System.out.print("}\n");
-		
-		//Printing out segments in the router buffer
-		System.out.print("Segments in Router: {");	
-		for(List<Segment> segments : router.getSegmentsInRouterBuffer()){
-			System.out.print("[");
-			for(Segment segment : segments){
-				System.out.print(segment.getId() + ",");
-			}
-			System.out.print("],");
-		}
-		System.out.print("}\n");
-		
-		//Printing out segments on the second link
-		System.out.print("Segments on 2nd Link: {");
-		for(Segment segment : routerToReceiver.getData()){
-			System.out.print(segment.getId() + ",");
-		}
-		System.out.print("}\n");
-		//End Printout
-		
-		// TODO Print out Receiver Information
-		
+				
 		senderToRouter.incrementClk();
 		routerToReceiver.incrementClk();
 		sender.incrementClk();
 		clock++;
 		
-		if(clock >= CLOCK_LIMIT)
-			break;
+		
 		}
 	}
 }
