@@ -1,12 +1,14 @@
 package com.tcp.tahoe.modules;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
 import com.tcp.tahoe.data.impl.AckPacket;
+import com.tcp.tahoe.data.impl.SenderVariableData;
 import com.tcp.tahoe.data.impl.Segment;
 
 public class Sender {
@@ -29,6 +31,12 @@ public class Sender {
 	private Queue<Segment> segmentsToSend;
 	private List<AckPacket> acknowledgements;
 	private List<AckPacket> dupAcknowlegements;
+	
+	//for dataCollection
+	private Collection<SenderVariableData> congWinCollection;
+	private Collection<SenderVariableData> effectiveWinCollection;
+	private Collection<SenderVariableData> flightSizeCollection;
+	private Collection<SenderVariableData> ssThreshCollection;
 
 	public Sender(long mss, long rtt, int numberOfPackets, long RcvWindow) {
 		this.state = 0;
@@ -51,6 +59,12 @@ public class Sender {
 		this.segmentsToSend = new LinkedList<Segment>();
 		this.acknowledgements = new ArrayList<AckPacket>();
 		this.dupAcknowlegements = new ArrayList<AckPacket>();
+		
+		//Data Collection
+		this.congWinCollection = new ArrayList<SenderVariableData>();
+		this.effectiveWinCollection = new ArrayList<SenderVariableData>();
+		this.flightSizeCollection = new ArrayList<SenderVariableData>();
+		this.ssThreshCollection = new ArrayList<SenderVariableData>();
 	}
 
 	public boolean isDoneSending() {
@@ -86,7 +100,7 @@ public class Sender {
 			return null;
 	}
 	
-	public void sendSegments(){
+	public void sendSegments(long clock){
 		//removing all in the segmentsToSend queue
 		segmentsToSend.removeAll(segmentsToSend);
 		rttCount = rtt;
@@ -105,9 +119,9 @@ public class Sender {
 			SSThresh = 65535;
 		else
 			SSThresh = Math.max((long)(0.5 * FlightSize), 2 * mss);
+
 		
 		// -----------------------------------------
-		
 		//if loss is detected -- fast retransmit
 		if(state == 1){
 			state = 0;
@@ -127,6 +141,14 @@ public class Sender {
 			}
 		}
 		// -----------------------------------------
+		
+		
+		
+		//Adding to Collection for graphing data
+		congWinCollection.add(new SenderVariableData(clock, CongWindow));
+		effectiveWinCollection.add(new SenderVariableData(clock, EffectiveWindow));
+		flightSizeCollection.add(new SenderVariableData(clock, FlightSize));
+		ssThreshCollection.add(new SenderVariableData(clock, SSThresh));
 		
 		//finding the LastByteSent
 		Iterator<Segment> iter = segmentsToSend.iterator();
@@ -182,5 +204,20 @@ public class Sender {
 	public void incrementClk() {
 		rttCount--;
 	}
-
+	
+	public Collection<SenderVariableData> getCongWindowData(){
+		return congWinCollection;
+	}
+	
+	public Collection<SenderVariableData> getEffectWinData(){
+		return effectiveWinCollection;
+	}
+	
+	public Collection<SenderVariableData> getFlightSizeData(){
+		return flightSizeCollection;
+	}
+	
+	public Collection<SenderVariableData> getSSThreshData(){
+		return ssThreshCollection;
+	}
 }
