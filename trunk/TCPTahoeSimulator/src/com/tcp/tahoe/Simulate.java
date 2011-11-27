@@ -1,11 +1,16 @@
 package com.tcp.tahoe;
 
 import java.util.Collection;
-
 import com.tcp.tahoe.data.impl.AckPacket;
 import com.tcp.tahoe.data.impl.Segment;
 import com.tcp.tahoe.data.impl.SenderVariableData;
 import com.tcp.tahoe.modules.*;
+import java.io.IOException;
+import java.io.File;
+import jxl.*; 
+import jxl.read.biff.BiffException;
+import jxl.write.*; 
+import jxl.write.Number;
 
 public class Simulate {
 	
@@ -27,7 +32,7 @@ public class Simulate {
 	private static final int SENDER_TO_ROUTER_LINK_SPEED = 10;
 	private static final int ROUTER_TO_RECEIVER_LINK_SPEED = 1;
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		
 		//Initialize Modules
 		Sender sender = new Sender(MSS, RTT, NUMBER_OF_PACKETS, RCV_WINDOW);
@@ -70,9 +75,7 @@ public class Simulate {
 					System.out.println("Segment added on Link1:" + segmentToSend);
 					//End Printout
 				}
-			}
-			
-			
+			}		
 			
 			if(!routerToReceiver.isBusy()){
 				if(!routerToReceiver.isEmpty()){
@@ -107,17 +110,13 @@ public class Simulate {
 		
 		}
 		
-		
 		//Graphing Part of the Application
 		Collection<SenderVariableData> congWinCollection = sender.getCongWindowData();
 		Collection<SenderVariableData> effectiveWinCollection = sender.getEffectWinData();
 		Collection<SenderVariableData> flightSizeCollection = sender.getFlightSizeData();
 		Collection<SenderVariableData> ssThreshCollection = sender.getSSThreshData();
 		
-		for(SenderVariableData dataObj : congWinCollection){
-			System.out.println("Time: " + dataObj.getTime());
-			System.out.println("Data: " + dataObj.getData());
-		}
+
 		
 		System.out.println("\nVariable Data");
 		System.out.println("Congestion Window Data: " + congWinCollection.toString());
@@ -126,5 +125,68 @@ public class Simulate {
 		System.out.println("SS Threshold Data:      " + ssThreshCollection.toString());
 		
 		
+		
+		try {
+			File inputWorkbook = new File("C:/Users/Administrator/workspace/TCPTahoeSimulator/src/com/tcp/tahoe/graph_template.xls");
+			Workbook w = Workbook.getWorkbook(inputWorkbook);
+			WritableWorkbook copy = Workbook.createWorkbook(new File("C:/Users/Administrator/workspace/TCPTahoeSimulator/src/com/tcp/tahoe/output.xls"), w); 
+			WritableSheet sheet0 = copy.getSheet(0);   //congestion win
+			WritableSheet sheet1 = copy.getSheet(1);  //effective win
+			WritableSheet sheet2 = copy.getSheet(2);  //flight
+			WritableSheet sheet3 = copy.getSheet(3); //ssThresh
+			
+			
+			int row=1; 
+			for(SenderVariableData dataObj : congWinCollection){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet0.addCell(number0);
+				sheet0.addCell(number1);
+			
+				row++;
+			}		
+			row=1;
+			for(SenderVariableData dataObj : effectiveWinCollection){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet1.addCell(number0);
+				sheet1.addCell(number1);
+			
+				row++;
+			}
+			row=1;
+			for(SenderVariableData dataObj : flightSizeCollection){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet2.addCell(number0);
+				sheet2.addCell(number1);
+			
+				row++;
+			}
+			row=1;
+			for(SenderVariableData dataObj : ssThreshCollection){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet3.addCell(number0);
+				sheet3.addCell(number1);
+			
+				row++;
+			}	
+			
+						
+			
+			//write and close output.xls
+			copy.write();
+			copy.close(); 
+			
+		} catch (BiffException e) {
+			e.printStackTrace();
+		} catch (WriteException e) {
+			e.printStackTrace();
+		}
 	}
 }
