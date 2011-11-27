@@ -7,4 +7,8 @@ public class AckPacket extends Packet{
 		super(id);
 	}
 
+	@Override
+	public String toString(){
+		return "Ack-" + super.toString();
+	}
 }

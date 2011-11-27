@@ -10,5 +10,10 @@ public abstract class Packet {
 	public int getId(){
 		return id;
 	}
+	
+	@Override
+	public String toString(){
+		return "" + id;
+	}
 
 }
