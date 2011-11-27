@@ -185,7 +185,7 @@ public class Simulate {
 		} catch (WriteException e) {
 			e.printStackTrace();
 		} finally {
-			System.out.println("Done Simulating");
+			System.out.println("\nDone Simulating");
 		}
 	}
 }
