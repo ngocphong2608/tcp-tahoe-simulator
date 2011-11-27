@@ -114,6 +114,11 @@ public class Simulate {
 		Collection<SenderVariableData> flightSizeCollection = sender.getFlightSizeData();
 		Collection<SenderVariableData> ssThreshCollection = sender.getSSThreshData();
 		
+		for(SenderVariableData dataObj : congWinCollection){
+			System.out.println("Time: " + dataObj.getTime());
+			System.out.println("Data: " + dataObj.getData());
+		}
+		
 		System.out.println("\nVariable Data");
 		System.out.println("Congestion Window Data: " + congWinCollection.toString());
 		System.out.println("Effective Window Data:  " + effectiveWinCollection.toString());

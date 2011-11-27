@@ -9,7 +9,7 @@ public class SenderVariableData {
 		this.data = data;
 	}
 	
-	public long getTme(){
+	public long getTime(){
 		return time;
 	}
 	
