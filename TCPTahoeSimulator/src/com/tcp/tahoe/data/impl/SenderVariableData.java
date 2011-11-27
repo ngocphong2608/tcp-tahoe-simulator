@@ -2,23 +2,23 @@ package com.tcp.tahoe.data.impl;
 
 public class SenderVariableData {
 	private long time;
-	private long congWin;
+	private long data;
 	
-	public SenderVariableData(long time, long congWin){
+	public SenderVariableData(long time, long data){
 		this.time = time;
-		this.congWin = congWin;
+		this.data = data;
 	}
 	
 	public long getTme(){
 		return time;
 	}
 	
-	public long getCongWin(){
-		return congWin;
+	public long getData(){
+		return data;
 	}
 	
 	@Override
 	public String toString(){
-		return "Clk:" + time + "|Value:" + congWin;
+		return "Clk:" + time + "|Value:" + data;
 	}
 }
