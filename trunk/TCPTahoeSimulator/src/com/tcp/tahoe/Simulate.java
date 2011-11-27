@@ -1,10 +1,16 @@
 package com.tcp.tahoe;
 
+import java.util.Collection;
+
 import com.tcp.tahoe.data.impl.AckPacket;
 import com.tcp.tahoe.data.impl.Segment;
+import com.tcp.tahoe.data.impl.SenderVariableData;
 import com.tcp.tahoe.modules.*;
 
 public class Simulate {
+	
+	
+	
 	private static final int NUMBER_OF_PACKETS = 10;
 	
 	//in bytes
@@ -14,7 +20,6 @@ public class Simulate {
 	
 	//in ms
 	private static final long RTT = 500;
-	private static final long CLOCK_LIMIT = 1000;
 	private static long clock = 1;
 	
 	
@@ -38,7 +43,7 @@ public class Simulate {
 			
 			//RTO timeout 
 			if(sender.isRTODone()){
-				sender.sendSegments();				
+				sender.sendSegments(clock);				
 			}
 			
 			if(!senderToRouter.isBusy()){
@@ -100,7 +105,21 @@ public class Simulate {
 		sender.incrementClk();
 		clock++;
 		
-		
 		}
+		
+		
+		//Graphing Part of the Application
+		Collection<SenderVariableData> congWinCollection = sender.getCongWindowData();
+		Collection<SenderVariableData> effectiveWinCollection = sender.getEffectWinData();
+		Collection<SenderVariableData> flightSizeCollection = sender.getFlightSizeData();
+		Collection<SenderVariableData> ssThreshCollection = sender.getSSThreshData();
+		
+		System.out.println("\nVariable Data");
+		System.out.println("Congestion Window Data: " + congWinCollection.toString());
+		System.out.println("Effective Window Data:  " + effectiveWinCollection.toString());
+		System.out.println("Flight Size Data:       " + flightSizeCollection.toString());
+		System.out.println("SS Threshold Data:      " + ssThreshCollection.toString());
+		
+		
 	}
 }
