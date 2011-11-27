@@ -14,9 +14,7 @@ import jxl.write.Number;
 
 public class Simulate {
 	
-	
-	
-	private static final int NUMBER_OF_PACKETS = 10;
+	private static final int NUMBER_OF_PACKETS = 100;
 	
 	//in bytes
 	private static final long RCV_WINDOW = 1048576;
@@ -67,7 +65,6 @@ public class Simulate {
 					senderToRouter.freeLink();			
 					Segment segmentToSend = sender.sendNextSegment();
 					
-					//TODO sender sending segments
 					senderToRouter.addData(segmentToSend);	
 					
 					//Start Printout
@@ -127,9 +124,9 @@ public class Simulate {
 		
 		
 		try {
-			File inputWorkbook = new File("C:/Users/Administrator/workspace/TCPTahoeSimulator/src/com/tcp/tahoe/graph_template.xls");
+			File inputWorkbook = new File("graph_template.xls");
 			Workbook w = Workbook.getWorkbook(inputWorkbook);
-			WritableWorkbook copy = Workbook.createWorkbook(new File("C:/Users/Administrator/workspace/TCPTahoeSimulator/src/com/tcp/tahoe/output.xls"), w); 
+			WritableWorkbook copy = Workbook.createWorkbook(new File("output.xls"), w); 
 			WritableSheet sheet0 = copy.getSheet(0);   //congestion win
 			WritableSheet sheet1 = copy.getSheet(1);  //effective win
 			WritableSheet sheet2 = copy.getSheet(2);  //flight
@@ -187,6 +184,8 @@ public class Simulate {
 			e.printStackTrace();
 		} catch (WriteException e) {
 			e.printStackTrace();
+		} finally {
+			System.out.println("Done Simulating");
 		}
 	}
 }

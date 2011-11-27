@@ -160,8 +160,7 @@ public class Sender {
 	}
 
 	public void recieveAck(AckPacket ack) {
-		// TODO Auto-generated method stub
-				
+			
 		if(dupAcknowlegements.isEmpty()){
 			dupAcknowlegements.add(ack);
 		} else {
