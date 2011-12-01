@@ -7,7 +7,7 @@ public class Link {
 	private boolean isEmpty;
 	private int speed; // the speed of the link in MB/s
 	private long clk; // in milliseconds
-	private long maxCount; // in milliseconds
+	private double maxCount; // in milliseconds
 
 	public Link(int speed) {
 		// initializing the link speed
@@ -25,10 +25,10 @@ public class Link {
 			return false;
 		else {
 			// retrieving the segment MSS value
-			long segmentMss = segment.getMss();
+			double segmentMss = segment.getMss();
 			
-			// maxCount[ms] = MSS[bytes] * (1[s] / speed[MB]) * (1[MB] / 1048576[bytes]) * (1000[ms] / 1[s])
-			maxCount = (segmentMss / speed) * (1 / 1048576) * (1000 / 1);
+			// maxCount[ms] = MSS[bytes] * (1[s] / speed[MB]) * (1[MB] / 1048576[bytes]) * (1000[us] / 1[s])
+			maxCount = (segmentMss / speed) * ((double)(1000000)) / 1048576;
 
 			// if the segment has waited their fair share on the link then the link is free
 			if (clk < maxCount)
@@ -63,6 +63,7 @@ public class Link {
 	}
 
 	public void incrementClk() {
+		
 		// Increment the clock of the link
 		clk++;
 	}
