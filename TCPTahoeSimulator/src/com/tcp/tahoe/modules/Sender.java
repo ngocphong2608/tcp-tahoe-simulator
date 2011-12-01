@@ -19,6 +19,7 @@ public class Sender {
 	private long rtt;
 	private long rttCount;
 	private int numOfPackets;
+	private int countNumOfPackets;
 	
 	private long RcvWindow;
 	private long CongWindow;
@@ -28,6 +29,7 @@ public class Sender {
 	private long FlightSize;
 	private long SSThresh;
 	
+	private List<Segment> segmentsSent;
 	private Queue<Segment> segmentsToSend;
 	private List<AckPacket> acknowledgements;
 	private List<AckPacket> dupAcknowlegements;
@@ -46,6 +48,7 @@ public class Sender {
 		this.rttCount = 0;
 		this.rtt = rtt;
 		this.numOfPackets = numberOfPackets;
+		this.countNumOfPackets = 0;
 		
 		//Sender algorithm variables
 		this.RcvWindow = RcvWindow;
@@ -56,6 +59,7 @@ public class Sender {
 		this.FlightSize = 0;
 		this.SSThresh = 0;
 		
+		this.segmentsSent = new ArrayList<Segment>();
 		this.segmentsToSend = new LinkedList<Segment>();
 		this.acknowledgements = new ArrayList<AckPacket>();
 		this.dupAcknowlegements = new ArrayList<AckPacket>();
@@ -70,11 +74,15 @@ public class Sender {
 	public boolean isDoneSending() {
 		if (numOfPackets == 0) {
 			return true;
-		} else if (acknowledgements.size() >= numOfPackets) {
-			return true;
 		} else {
-			return false;
+			if(acknowledgements.isEmpty())
+				return false;
+			else if (acknowledgements.get(acknowledgements.size()-1).getId() >= numOfPackets)
+				return true;
+			else 
+				return false;
 		}
+			
 	}
 
 	public boolean hasSomethingtoSend() {
@@ -100,6 +108,10 @@ public class Sender {
 			return null;
 	}
 	
+	public long getFlightSize(){
+		return FlightSize;
+	}
+	
 	public void sendSegments(long clock){
 		//removing all in the segmentsToSend queue
 		segmentsToSend.removeAll(segmentsToSend);
@@ -113,6 +125,7 @@ public class Sender {
 				
 				
 		FlightSize = LastByteSent - LastByteAcked;
+		
 		EffectiveWindow = Math.min(CongWindow, RcvWindow) - FlightSize;
 			
 		if(state == 0)
@@ -126,18 +139,42 @@ public class Sender {
 		if(state == 1){
 			state = 0;
 			EffectiveWindow = 1 * mss;		
-			segmentsToSend.add(new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss));
+			Segment tempSeg = new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss);
+			segmentsToSend.add(tempSeg);
+			
+			System.out.println("3 Duplicate ACK -- Resending Outstanding Segment");
+			
+			//storing what segments have been sent
+			addToSegmentsSent(tempSeg);
+			
 		} else {
 			//send next available segments
-			int lastAckId;
+			if(EffectiveWindow < (1 * mss))
+				EffectiveWindow = 1 * mss;
+			
+			int lastIdSend;
 			if(!acknowledgements.isEmpty())
-				lastAckId = acknowledgements.get(acknowledgements.size() - 1).getId();
+				lastIdSend = segmentsSent.get(segmentsSent.size()-1).getId() + 1;
 			else 
-				lastAckId = 0;
+				lastIdSend = 0;
 				
+			int lastAckReceived; 
+			if(!acknowledgements.isEmpty())
+				lastAckReceived = acknowledgements.get(acknowledgements.size()-1).getId();
+			else
+				lastAckReceived = 0;
+			
 			for(int i=0; i< EffectiveWindow/mss; i++){
-				segmentsToSend.add(new Segment(lastAckId,mss));
-				lastAckId++;
+				if((lastAckReceived) < numOfPackets){
+					Segment tempSeg = new Segment(lastIdSend,mss);
+					segmentsToSend.add(tempSeg);
+					lastIdSend++;
+					
+					//storing what segments have been sent
+					addToSegmentsSent(tempSeg);
+				} else {
+					System.out.println();
+				}
 			}
 		}
 		// -----------------------------------------
@@ -151,12 +188,23 @@ public class Sender {
 		ssThreshCollection.add(new SenderVariableData(clock, SSThresh));
 		
 		//finding the LastByteSent
-		Iterator<Segment> iter = segmentsToSend.iterator();
-		while(iter.hasNext()){
-			LastByteSent = iter.next().getId() * mss;
+		LastByteSent = segmentsSent.get(segmentsSent.size() - 1).getId() * mss;
+	}
+	private void addToSegmentsSent(Segment tempSeg){
+		//storing what segments have been sent
+		if(segmentsSent.isEmpty()){
+			segmentsSent.add(tempSeg);
+		} else {
+			boolean foundSegment = false;
+			for(Segment seg : segmentsSent){
+				if(seg.getId() == tempSeg.getId()){
+					foundSegment = true;
+					break;
+				}
+			}
+			if(!foundSegment)
+				segmentsSent.add(tempSeg);
 		}
-		
-		
 	}
 
 	public void recieveAck(AckPacket ack) {
@@ -185,12 +233,13 @@ public class Sender {
 		
 		//Calculating the congestionWindow
 		if(dupAcknowlegements.size() <= 1){
-			if((CongWindow + mss) <= SSThresh){
+			if((CongWindow) <= SSThresh){
 				//Slow Start
 				CongWindow += mss;
 			} else {
 				//Congestion Avoidance
-				CongWindow = CongWindow + mss * (mss/CongWindow);
+				double temp = mss * (((double)mss)/CongWindow);
+				CongWindow = (long) (CongWindow + temp);
 			}
 		} else if(dupAcknowlegements.size() >= 3){
 			//loss is detected

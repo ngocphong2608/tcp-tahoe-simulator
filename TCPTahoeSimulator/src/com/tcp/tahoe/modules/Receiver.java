@@ -1,6 +1,7 @@
 package com.tcp.tahoe.modules;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.tcp.tahoe.data.impl.AckPacket;
@@ -20,9 +21,14 @@ public class Receiver {
 		bufferedSegments = new ArrayList<Segment>();
 		recievedSegments = new ArrayList<Segment>();
 	}
+	
 
 	public void recieveSegment(Segment data) {
 		int lastIdSegmentRecieved;
+		
+		if(data.getId() == 82){
+			System.out.println("82");
+		}
 
 		// if first time and there are no received Segments set
 		// lastIdSegmentRecieved to equal -1
@@ -41,16 +47,25 @@ public class Receiver {
 			while (true) {
 				lastIdSegmentRecieved++;
 				boolean addedSegment = false;
+				
+				Collection<Segment> segmentsToBeRemoved = new ArrayList<Segment>();
+				
 				for (Segment segment : bufferedSegments) {
 					if (segment.getId() == lastIdSegmentRecieved) {
 						recievedSegments.add(segment);
+						//TODO remove
+						//bufferedSegments.remove(segment);
+						segmentsToBeRemoved.add(segment);
 						
-						bufferedSegments.remove(segment);
 						bufferSpace = bufferSpace + segment.getMss();
-						
 						addedSegment = true;
 					}
 				}
+				
+				for(Segment segment : segmentsToBeRemoved){
+					bufferedSegments.remove(segment);
+				}
+				
 				if (!addedSegment)
 					break;
 			}
@@ -74,6 +89,10 @@ public class Receiver {
 				}
 			}
 		}
+	}
+	
+	public List<Segment> getBufferedSegments(){
+		return bufferedSegments;
 	}
 
 	public AckPacket getAck() {

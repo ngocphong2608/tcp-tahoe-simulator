@@ -30,7 +30,10 @@ public class Router {
 		if (freeSpace >= segmentMss){
 			freeSpace = freeSpace - segmentMss;
 			routerQueue.add(segment);
-		}			
+			System.out.println("Segment enqueued onto the Router:" + segment);
+		} else {
+			System.out.println("Segment dropped b/c Router Buffer Overflow:" + segment);
+		}
 	}
 
 	public Segment dequeue() {

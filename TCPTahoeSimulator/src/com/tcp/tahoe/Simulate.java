@@ -14,15 +14,16 @@ import jxl.write.Number;
 
 public class Simulate {
 	
-	private static final int NUMBER_OF_PACKETS = 100;
+	private static final int NUMBER_OF_PACKETS = 500;
 	
 	//in bytes
 	private static final long RCV_WINDOW = 1048576;
 	private static final long MSS = 1024;
-	private static final long ROUTER_BUFFER_SIZE = 10000 * MSS;
+	//private static final long ROUTER_BUFFER_SIZE = 10000 * MSS;
+	private static final long ROUTER_BUFFER_SIZE = 10 * MSS;
 	
 	//in ms
-	private static final long RTT = 500;
+	private static final long RTT = 500000;
 	private static long clock = 1;
 	
 	
@@ -46,6 +47,7 @@ public class Simulate {
 			
 			//RTO timeout 
 			if(sender.isRTODone()){
+				System.out.println("-------------------------");
 				sender.sendSegments(clock);				
 			}
 			
@@ -53,23 +55,24 @@ public class Simulate {
 				if(!senderToRouter.isEmpty()){
 					
 					//Start Printout
-					System.out.println("\nClock = " + clock + "ms");
-					System.out.println("Segment enqueued onto the Router:" + senderToRouter.getData());
+					System.out.println("\nClock = " + clock + "us");
+					//System.out.println("Segment enqueued onto the Router:" + senderToRouter.getData());
 					//End Printout
 					
 					router.enqueue(senderToRouter.getData());
 					senderToRouter.freeLink();
 				}	
 				
-				if(sender.hasSomethingtoSend()) {
-					senderToRouter.freeLink();			
+				if(sender.hasSomethingtoSend()) {		
 					Segment segmentToSend = sender.sendNextSegment();
 					
+					senderToRouter.freeLink();	
 					senderToRouter.addData(segmentToSend);	
 					
 					//Start Printout
-					System.out.println("\nClock = " + clock + "ms");
-					System.out.println("Segment added on Link1:" + segmentToSend);
+					System.out.println("\nClock = " + clock + "us");
+					System.out.println("Segment added on Link1: " + segmentToSend);
+					System.out.println("Flight Size: " + sender.getFlightSize());
 					//End Printout
 				}
 			}		
@@ -78,23 +81,28 @@ public class Simulate {
 				if(!routerToReceiver.isEmpty()){
 					Segment recievedSegment = routerToReceiver.getData();
 					receiver.recieveSegment(recievedSegment);
+					routerToReceiver.freeLink();
+					
 					
 					AckPacket ackPacket = receiver.getAck();
 					sender.recieveAck(ackPacket);
-					routerToReceiver.freeLink();
+					
 					
 					//Start Printout
-					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("\nClock = " + clock + "us");
 					System.out.println("Receiver Recieved :" + recievedSegment);
 					System.out.println("Receiver Sends :" + ackPacket.toString());
+					System.out.println("Receiver Buffer: " + receiver.getBufferedSegments().toString());
 					//End Printout
 				}
 				if(router.hasSegmentsToSend()){
 					Segment segmentToSend = router.dequeue();
+					
+					routerToReceiver.freeLink();
 					routerToReceiver.addData(segmentToSend);
 					
 					//Start Printout
-					System.out.println("\nClock = " + clock + "ms");
+					System.out.println("\nClock = " + clock + "us");
 					System.out.println("Segment dequeued onto Link2:" + segmentToSend);
 					//End Printout
 				}
@@ -175,7 +183,6 @@ public class Simulate {
 			}	
 			
 						
-			
 			//write and close output.xls
 			copy.write();
 			copy.close(); 
