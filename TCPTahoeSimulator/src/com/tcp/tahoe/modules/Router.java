@@ -34,6 +34,8 @@ public class Router {
 		} else {
 			System.out.println("Segment dropped b/c Router Buffer Overflow:" + segment);
 		}
+		
+		System.out.println("Router Queue: " + routerQueue.toString());
 	}
 
 	public Segment dequeue() {
