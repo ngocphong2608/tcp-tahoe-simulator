@@ -1,6 +1,9 @@
 package com.tcp.tahoe;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+
 import com.tcp.tahoe.data.impl.AckPacket;
 import com.tcp.tahoe.data.impl.Segment;
 import com.tcp.tahoe.data.impl.SenderVariableData;
@@ -15,12 +18,13 @@ import jxl.write.Number;
 public class Simulate {
 	
 	private static final int NUMBER_OF_PACKETS = 500;
+	//private static final int NUMBER_OF_PACKETS = 70;
 	
 	//in bytes
 	private static final long RCV_WINDOW = 1048576;
 	private static final long MSS = 1024;
-	//private static final long ROUTER_BUFFER_SIZE = 10000 * MSS;
-	private static final long ROUTER_BUFFER_SIZE = 10 * MSS;
+	private static final long ROUTER_BUFFER_SIZE = 10000 * MSS;
+	//private static final long ROUTER_BUFFER_SIZE = 5 * MSS;
 	
 	//in ms
 	private static final long RTT = 500000;
@@ -40,6 +44,8 @@ public class Simulate {
 		Link senderToRouter = new Link(SENDER_TO_ROUTER_LINK_SPEED);
 		Link routerToReceiver = new Link(ROUTER_TO_RECEIVER_LINK_SPEED);
 		
+		//adding data for 
+		List<SenderVariableData> packetsRouterBuffer = new ArrayList<SenderVariableData>();
 		
 		//Starting the Simulation
 		System.out.println("TCP Tahoe Siumlation: ");
@@ -48,7 +54,10 @@ public class Simulate {
 			//RTO timeout 
 			if(sender.isRTODone()){
 				System.out.println("-------------------------");
-				sender.sendSegments(clock);				
+				sender.sendSegments(clock);		
+				
+				//adding data
+				packetsRouterBuffer.add(new SenderVariableData(clock,router.getSegmentsInRouterBuffer().size()));
 			}
 			
 			if(!senderToRouter.isBusy()){
@@ -120,6 +129,7 @@ public class Simulate {
 		Collection<SenderVariableData> effectiveWinCollection = sender.getEffectWinData();
 		Collection<SenderVariableData> flightSizeCollection = sender.getFlightSizeData();
 		Collection<SenderVariableData> ssThreshCollection = sender.getSSThreshData();
+		//graph packetsRouterBuffer
 		
 
 		
@@ -128,6 +138,7 @@ public class Simulate {
 		System.out.println("Effective Window Data:  " + effectiveWinCollection.toString());
 		System.out.println("Flight Size Data:       " + flightSizeCollection.toString());
 		System.out.println("SS Threshold Data:      " + ssThreshCollection.toString());
+		System.out.println("Buffer Data:      		" + packetsRouterBuffer.toString());
 		
 		
 		
@@ -139,7 +150,8 @@ public class Simulate {
 			WritableSheet sheet1 = copy.getSheet(1);  //effective win
 			WritableSheet sheet2 = copy.getSheet(2);  //flight
 			WritableSheet sheet3 = copy.getSheet(3); //ssThresh
-			
+			WritableSheet sheet5 = copy.getSheet(5);  //packetrouterBuff
+			WritableSheet sheet6 = copy.getSheet(6);   //senderUtil
 			
 			int row=1; 
 			for(SenderVariableData dataObj : congWinCollection){
@@ -181,7 +193,27 @@ public class Simulate {
 			
 				row++;
 			}	
+			row=1;
+			for(SenderVariableData dataObj : packetsRouterBuffer){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet5.addCell(number0);
+				sheet5.addCell(number1);
 			
+				row++;
+			}	
+			row=1;
+	/*		for(SenderVariableData dataObj : senderUtil){
+				Number number0,number1;
+				number0 = new Number(0,row,dataObj.getTime()); //Col A (time)
+				number1 = new Number(1,row,dataObj.getData()); //Col B (Data)
+				sheet6.addCell(number0);
+				sheet6.addCell(number1);
+			
+				row++;
+			}	
+	*/			
 						
 			//write and close output.xls
 			copy.write();

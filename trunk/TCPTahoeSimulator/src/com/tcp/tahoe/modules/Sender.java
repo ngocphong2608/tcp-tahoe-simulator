@@ -14,7 +14,7 @@ import com.tcp.tahoe.data.impl.Segment;
 public class Sender {
 	private int state; // 0 - for slow start & 1 - for congestion avoidance
 	
-	
+	private boolean initialSSThresh;
 	private long mss;
 	private long rtt;
 	private long rttCount;
@@ -40,10 +40,12 @@ public class Sender {
 	private Collection<SenderVariableData> flightSizeCollection;
 	private Collection<SenderVariableData> ssThreshCollection;
 
+
 	public Sender(long mss, long rtt, int numberOfPackets, long RcvWindow) {
 		this.state = 0;
 		this.CongWindow = 1;
 		
+		this.initialSSThresh = true;
 		this.mss = mss;
 		this.rttCount = 0;
 		this.rtt = rtt;
@@ -128,7 +130,7 @@ public class Sender {
 		
 		EffectiveWindow = Math.min(CongWindow, RcvWindow) - FlightSize;
 			
-		if(state == 0)
+		if(initialSSThresh)
 			SSThresh = 65535;
 		else
 			SSThresh = Math.max((long)(0.5 * FlightSize), 2 * mss);
@@ -138,8 +140,11 @@ public class Sender {
 		//if loss is detected -- fast retransmit
 		if(state == 1){
 			state = 0;
-			EffectiveWindow = 1 * mss;		
-			Segment tempSeg = new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss);
+			EffectiveWindow = 1 * mss;
+			Segment tempSeg;
+			
+			tempSeg = new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss);
+			
 			segmentsToSend.add(tempSeg);
 			
 			System.out.println("3 Duplicate ACK -- Resending Outstanding Segment");
@@ -208,7 +213,7 @@ public class Sender {
 	}
 
 	public void recieveAck(AckPacket ack) {
-			
+
 		if(dupAcknowlegements.isEmpty()){
 			dupAcknowlegements.add(ack);
 		} else {
@@ -245,6 +250,7 @@ public class Sender {
 			//loss is detected
 			CongWindow = mss;
 			state = 1;
+			initialSSThresh = false;
 		} 
 
 	}
