@@ -26,10 +26,6 @@ public class Receiver {
 	public void recieveSegment(Segment data) {
 		int lastIdSegmentRecieved;
 		
-		if(data.getId() == 82){
-			System.out.println("82");
-		}
-
 		// if first time and there are no received Segments set
 		// lastIdSegmentRecieved to equal -1
 		if (recievedSegments.isEmpty())

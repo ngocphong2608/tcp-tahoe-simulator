@@ -1,10 +1,10 @@
 package com.tcp.tahoe.data.impl;
 
-public class SenderVariableData {
+public class SenderVariableDoubleData {
 	private long time;
-	private long data;
+	private double data;
 	
-	public SenderVariableData(long time, long data){
+	public SenderVariableDoubleData(long time, double data){
 		this.time = time;
 		this.data = data;
 	}
@@ -13,7 +13,7 @@ public class SenderVariableData {
 		return time;
 	}
 	
-	public long getData(){
+	public double getData(){
 		return data;
 	}
 	
