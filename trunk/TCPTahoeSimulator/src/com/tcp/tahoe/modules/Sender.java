@@ -125,7 +125,7 @@ public class Sender {
 
 		//finding the LastByteAcked
 		if(!acknowledgements.isEmpty())
-			LastByteAcked = (acknowledgements.get(acknowledgements.size() - 1).getId() * mss) - mss;
+			LastByteAcked = (acknowledgements.get(acknowledgements.size() - 1).getId() * mss);
 		else 
 			LastByteAcked = 0;
 				
