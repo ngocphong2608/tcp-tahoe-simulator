@@ -10,14 +10,17 @@ public class Router {
 	private Queue<Segment> routerQueue;
 	private long bufferSize; // The router's buffer size in bytes
 	private long freeSpace; // The router's free space in bytes
+	private boolean printOut;
 
-	public Router(long bufferSize) {
+	public Router(long bufferSize, boolean printOut) {
 		// initializing the routerQueue
 		routerQueue = new LinkedList<Segment>();
 
 		// initializing the bufferSize and freeSpace parameters
 		this.bufferSize = bufferSize;
 		freeSpace = this.bufferSize;
+		
+		this.printOut = printOut;
 	}
 
 	public void enqueue(Segment segment) {
@@ -30,12 +33,15 @@ public class Router {
 		if (freeSpace >= segmentMss){
 			freeSpace = freeSpace - segmentMss;
 			routerQueue.add(segment);
-			System.out.println("Segment enqueued onto the Router:" + segment);
+			if(printOut)
+				System.out.println("Segment enqueued onto the Router:" + segment);
 		} else {
-			System.out.println("Segment dropped b/c Router Buffer Overflow:" + segment);
+			if(printOut)
+				System.out.println("Segment dropped b/c Router Buffer Overflow:" + segment);
 		}
 		
-		System.out.println("Router Queue: " + routerQueue.toString());
+		if(printOut)
+			System.out.println("Router Queue: " + routerQueue.toString());
 	}
 
 	public Segment dequeue() {
