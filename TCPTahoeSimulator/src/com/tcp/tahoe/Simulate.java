@@ -11,6 +11,7 @@ import com.tcp.tahoe.data.impl.SenderVariableDoubleData;
 import com.tcp.tahoe.data.impl.SenderVariableLongData;
 import com.tcp.tahoe.modules.*;
 
+import java.lang.Boolean;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,8 +29,12 @@ public class Simulate {
 	private static long RTT;
 	private static int SENDER_TO_ROUTER_LINK_SPEED;
 	private static int ROUTER_TO_RECEIVER_LINK_SPEED;
+	private static boolean PRINTOUT;
 	
 	private static long clock = 1;
+	
+	private static int percentComplete = 0;
+	private static int prevPercentComplete = -1;
 	
 	public static void main(String[] args) throws IOException {
 		try{
@@ -38,22 +43,22 @@ public class Simulate {
 			//Initialize Modules
 			Sender sender = new Sender(MSS, RTT, NUMBER_OF_PACKETS, RCV_WINDOW);
 			Receiver receiver = new Receiver(RCV_WINDOW);
-			Router router = new Router(ROUTER_BUFFER_SIZE);
+			Router router = new Router(ROUTER_BUFFER_SIZE, PRINTOUT);
 			Link senderToRouter = new Link(SENDER_TO_ROUTER_LINK_SPEED);
 			Link routerToReceiver = new Link(ROUTER_TO_RECEIVER_LINK_SPEED);
 			
 			//adding data for 
 			List<SenderVariableLongData> packetsRouterBuffer = new ArrayList<SenderVariableLongData>();
 			
-			//Starting the Simulation
 			System.out.println("TCP Tahoe Siumlation: ");
+			
+			//Starting the Simulation
 			while(!sender.isDoneSending()){
 				
 				//RTO timeout
 				boolean RTO_UP = sender.isRTODone(); 
 				if(RTO_UP){
-					System.out.println("-------------------------");
-					sender.sendSegments(clock,Math.min(SENDER_TO_ROUTER_LINK_SPEED, ROUTER_TO_RECEIVER_LINK_SPEED));		
+					sender.sendSegments(clock,Math.min(SENDER_TO_ROUTER_LINK_SPEED, ROUTER_TO_RECEIVER_LINK_SPEED),PRINTOUT);		
 					
 					//adding data
 					packetsRouterBuffer.add(new SenderVariableLongData(clock,router.getSegmentsInRouterBuffer().size()));
@@ -62,11 +67,9 @@ public class Simulate {
 				if(!senderToRouter.isBusy() || RTO_UP){
 					if(!senderToRouter.isEmpty() & !RTO_UP){
 						
-						//Start Printout
-						System.out.println("\nClock = " + clock + "us");
-						//System.out.println("Segment enqueued onto the Router:" + senderToRouter.getData());
-						//End Printout
-						
+						if(PRINTOUT)
+							System.out.println("\nClock = " + clock + "us");
+												
 						router.enqueue(senderToRouter.getData());
 						senderToRouter.freeLink();
 					}	
@@ -77,11 +80,18 @@ public class Simulate {
 						senderToRouter.freeLink();	
 						senderToRouter.addData(segmentToSend);	
 						
-						//Start Printout
-						System.out.println("\nClock = " + clock + "us");
-						System.out.println("Segment added on Link1: " + segmentToSend);
-						System.out.println("Flight Size: " + sender.getFlightSize());
-						//End Printout
+						if(PRINTOUT){
+							System.out.println("\nClock = " + clock + "us");
+							System.out.println("Segment added on Link1: " + segmentToSend);
+							System.out.println("Flight Size: " + sender.getFlightSize());
+						} else {
+							double tempPercent = ((double)segmentToSend.getId())/(NUMBER_OF_PACKETS-1);
+							percentComplete = (int) (tempPercent * 100);
+							if(prevPercentComplete != percentComplete){
+								System.out.println("Percent Complete: " + percentComplete);
+								prevPercentComplete = percentComplete;
+							}
+						}
 					}
 				}		
 				
@@ -96,12 +106,12 @@ public class Simulate {
 						sender.recieveAck(ackPacket);
 						
 						
-						//Start Printout
-						System.out.println("\nClock = " + clock + "us");
-						System.out.println("Receiver Recieved :" + recievedSegment);
-						System.out.println("Receiver Sends :" + ackPacket.toString());
-						System.out.println("Receiver Buffer: " + receiver.getBufferedSegments().toString());
-						//End Printout
+						if(PRINTOUT){
+							System.out.println("\nClock = " + clock + "us");
+							System.out.println("Receiver Recieved :" + recievedSegment);
+							System.out.println("Receiver Sends :" + ackPacket.toString());
+							System.out.println("Receiver Buffer: " + receiver.getBufferedSegments().toString());
+						}
 					}
 					if(router.hasSegmentsToSend()){
 						Segment segmentToSend = router.dequeue();
@@ -109,10 +119,10 @@ public class Simulate {
 						routerToReceiver.freeLink();
 						routerToReceiver.addData(segmentToSend);
 						
-						//Start Printout
-						System.out.println("\nClock = " + clock + "us");
-						System.out.println("Segment dequeued onto Link2:" + segmentToSend);
-						//End Printout
+						if(PRINTOUT){
+							System.out.println("\nClock = " + clock + "us");
+							System.out.println("Segment dequeued onto Link2:" + segmentToSend);
+						}
 					}
 				}
 					
@@ -132,14 +142,15 @@ public class Simulate {
 			//graph packetsRouterBuffer
 			
 	
-			
-			System.out.println("\nVariable Data");
-			System.out.println("Congestion Window Data: " + congWinCollection.toString());
-			System.out.println("Effective Window Data:  " + effectiveWinCollection.toString());
-			System.out.println("Flight Size Data:       " + flightSizeCollection.toString());
-			System.out.println("SS Threshold Data:      " + ssThreshCollection.toString());
-			System.out.println("Buffer Data:      		" + packetsRouterBuffer.toString());
-			System.out.println("Sender Utility Data:	" + senderUtilityCollection.toString());
+			if(PRINTOUT){
+				System.out.println("\nVariable Data");
+				System.out.println("Congestion Window Data: " + congWinCollection.toString());
+				System.out.println("Effective Window Data:  " + effectiveWinCollection.toString());
+				System.out.println("Flight Size Data:       " + flightSizeCollection.toString());
+				System.out.println("SS Threshold Data:      " + ssThreshCollection.toString());
+				System.out.println("Buffer Data:      		" + packetsRouterBuffer.toString());
+				System.out.println("Sender Utility Data:	" + senderUtilityCollection.toString());
+			}
 			
 			
 			
@@ -226,6 +237,7 @@ public class Simulate {
 				e.printStackTrace();
 			} finally {
 				System.out.println("\nDone Simulating");
+				Thread.sleep(3000);
 			}
 		} catch (Exception e){
 			System.out.println("Error Loading the Properties File");
@@ -244,5 +256,6 @@ public class Simulate {
 		SENDER_TO_ROUTER_LINK_SPEED = Integer.parseInt(connectionProps.getProperty("SENDER_TO_ROUTER_LINK_SPEED"));
 		ROUTER_TO_RECEIVER_LINK_SPEED = Integer.parseInt(connectionProps.getProperty("ROUTER_TO_RECEIVER_LINK_SPEED"));
 		RTT = Long.parseLong(connectionProps.getProperty("RTT"));	
+		PRINTOUT = Boolean.parseBoolean(connectionProps.getProperty("PRINTOUT"));
 	}
 }

@@ -116,7 +116,7 @@ public class Sender {
 		return FlightSize;
 	}
 	
-	public void sendSegments(long clock, int linkSpeed){
+	public void sendSegments(long clock, int linkSpeed, boolean printOut){
 		rtoTimeout = false;
 		
 		//removing all in the segmentsToSend queue
@@ -168,7 +168,8 @@ public class Sender {
 						segmentsToSend.add(tempSeg);
 						//storing what segments have been sent
 						addToSegmentsSent(tempSeg);
-						System.out.println("RTO Timeout -- Resending Outstanding Segment");
+						if(printOut)
+							System.out.println("RTO Timeout -- Resending Outstanding Segment");
 						break;
 					}
 				}
@@ -178,8 +179,8 @@ public class Sender {
 				tempSeg = new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss);
 				
 				
-				
-				System.out.println("3 Duplicate ACK -- Resending Outstanding Segment");
+				if(printOut)
+					System.out.println("3 Duplicate ACK -- Resending Outstanding Segment");
 				
 				segmentsToSend.add(tempSeg);
 				//storing what segments have been sent
@@ -203,7 +204,7 @@ public class Sender {
 				lastAckReceived = 0;
 			
 			for(int i=0; i< EffectiveWindow/mss; i++){
-				if((lastAckReceived) < numOfPackets){
+				if((lastAckReceived) < numOfPackets && lastIdSend < numOfPackets){
 					Segment tempSeg = new Segment(lastIdSend,mss);
 					segmentsToSend.add(tempSeg);
 					lastIdSend++;
@@ -211,7 +212,8 @@ public class Sender {
 					//storing what segments have been sent
 					addToSegmentsSent(tempSeg);
 				} else {
-					System.out.println();
+					if(printOut)
+						System.out.println();
 				}
 			}
 		}
