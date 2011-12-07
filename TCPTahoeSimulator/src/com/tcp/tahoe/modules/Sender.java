@@ -1,5 +1,6 @@
 package com.tcp.tahoe.modules;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -131,7 +132,7 @@ public class Sender {
 				
 		//start check for RTO timeout
 		int lastIdSegmentAcked = (int) (LastByteAcked / mss);
-		for(int i = lastIdSegmentAcked; i < segmentsSent.size(); i++){
+		for(int i = lastIdSegmentAcked + 1; i < segmentsSent.size(); i++){
 			Segment tempSeg = segmentsSent.get(i); 
 			tempSeg.incrementRTOCount();
 			if(tempSeg.getRTOCount() >= 3){
@@ -161,7 +162,7 @@ public class Sender {
 			EffectiveWindow = 1 * mss;
 			
 			if(rtoTimeout){
-				for(int i = lastIdSegmentAcked; i < segmentsSent.size(); i++){
+				for(int i = lastIdSegmentAcked + 1; i < segmentsSent.size(); i++){
 					Segment tempSeg = segmentsSent.get(i);
 					if(tempSeg.getRTOCount() >= 3){
 						tempSeg.resetRTOCount();
@@ -169,7 +170,7 @@ public class Sender {
 						//storing what segments have been sent
 						addToSegmentsSent(tempSeg);
 						if(printOut)
-							System.out.println("RTO Timeout -- Resending Outstanding Segment");
+							System.out.println("RTO Timeout " + tempSeg + " -- Resending Outstanding Segment");
 						break;
 					}
 				}
