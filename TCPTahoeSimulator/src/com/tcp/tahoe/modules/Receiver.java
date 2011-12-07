@@ -90,6 +90,10 @@ public class Receiver {
 	public List<Segment> getBufferedSegments(){
 		return bufferedSegments;
 	}
+	
+	public List<Segment> getRecievedSegments(){
+		return recievedSegments;
+	}
 
 	public AckPacket getAck() {
 		if (recievedSegments.isEmpty())
