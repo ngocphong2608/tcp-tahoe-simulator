@@ -1,6 +1,5 @@
 package com.tcp.tahoe.modules;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
