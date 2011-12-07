@@ -136,9 +136,10 @@ public class Sender {
 			Segment tempSeg = segmentsSent.get(i); 
 			tempSeg.incrementRTOCount();
 			if(tempSeg.getRTOCount() >= 3){
-				state = 1;
-				rtoTimeout = true;
+				if(state != 1)
+					rtoTimeout = true;
 				CongWindow = mss;
+				state = 1;
 				state = 1;
 				initialSSThresh = false;
 			}
@@ -178,7 +179,7 @@ public class Sender {
 				Segment tempSeg;
 				
 				tempSeg = new Segment(acknowledgements.get(acknowledgements.size() - 1).getId(), mss);
-				
+				tempSeg.resetRTOCount();
 				
 				if(printOut)
 					System.out.println("3 Duplicate ACK -- Resending Outstanding Segment");
