@@ -23,7 +23,7 @@ public class Router {
 		this.printOut = printOut;
 	}
 
-	public void enqueue(Segment segment) {
+	public void enqueue(Segment segment, long clock) {
 		// retrieving the MSS of the segment in bytes
 		long segmentMss = segment.getMss();
 
@@ -33,6 +33,9 @@ public class Router {
 		if (freeSpace >= segmentMss){
 			freeSpace = freeSpace - segmentMss;
 			routerQueue.add(segment);
+			
+			//for calculating the queuing delay
+			segment.setBufferStartTime(clock);
 			if(printOut)
 				System.out.println("Segment enqueued onto the Router:" + segment);
 		} else {
@@ -44,7 +47,7 @@ public class Router {
 			System.out.println("Router Queue: " + routerQueue.toString());
 	}
 
-	public Segment dequeue() {
+	public Segment dequeue(long clock) {
 		// if the router queue is empty then we return null
 		if (routerQueue.isEmpty())
 			return null;
@@ -52,7 +55,9 @@ public class Router {
 			// retrieve the next in line segments from the routerQueue
 			Segment dequeueSegment = routerQueue.remove();
 			long segmentMss = dequeueSegment.getMss();
-
+			
+			//for calculating the queuing delay
+			dequeueSegment.setBufferEndTime(clock);
 			// increment the free space by the amount of segments take off
 			freeSpace = freeSpace + segmentMss;
 

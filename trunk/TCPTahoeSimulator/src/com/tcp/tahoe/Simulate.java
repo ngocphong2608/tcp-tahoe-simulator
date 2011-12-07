@@ -78,7 +78,7 @@ public class Simulate {
 							if(PRINTOUT)
 								System.out.println("\nClock = " + clock + "us");
 													
-							router.enqueue(senderToRouter.getData());
+							router.enqueue(senderToRouter.getData(), clock);
 							senderToRouter.freeLink();
 						}	
 						
@@ -122,7 +122,7 @@ public class Simulate {
 							}
 						}
 						if(router.hasSegmentsToSend()){
-							Segment segmentToSend = router.dequeue();
+							Segment segmentToSend = router.dequeue(clock);
 							
 							routerToReceiver.freeLink();
 							routerToReceiver.addData(segmentToSend);
@@ -140,6 +140,13 @@ public class Simulate {
 				clock++;
 				
 				}
+				
+				//For calculating average queuing delay
+				Collection<Segment> recievedSegments = receiver.getRecievedSegments();
+				double avgQueuingDelay = 0;
+				for(Segment tempSeg : recievedSegments)
+					avgQueuingDelay += tempSeg.getBufferTime();
+				avgQueuingDelay = ((double)avgQueuingDelay)/recievedSegments.size();
 				
 				//Graphing Part of the Application
 				Collection<SenderVariableLongData> congWinCollection = sender.getCongWindowData();
@@ -159,7 +166,10 @@ public class Simulate {
 					System.out.println("Buffer Data:      		" + packetsRouterBuffer.toString());
 					System.out.println("Sender Utility Data:	" + senderUtilityCollection.toString());
 				}
-				
+				System.out.println();
+				System.out.println("-----------------------");
+				System.out.println("Average Queuing Delay: " + avgQueuingDelay);
+				System.out.println("-----------------------");
 				
 				
 				try {
